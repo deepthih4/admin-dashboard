@@ -1,0 +1,1908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Institution Admin</title>
+<!-- Set existing project publishable key below. Existing access_password is preserved for legacy Institution Access compatibility; migrate to server-side authentication before production. -->
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Inter, Arial, sans-serif;
+      background: #f7f8fa;
+      color: #111827;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: flex;
+    }
+
+    /* SIDEBAR */
+
+    .sidebar {
+      width: 240px;
+      background: #ffffff;
+      border-right: 1px solid #e5e7eb;
+      padding: 24px 16px;
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      z-index: 20;
+    }
+
+    .brand {
+      padding: 0 10px 25px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .brand h2 {
+      font-size: 19px;
+      font-weight: 700;
+    }
+
+    .brand p {
+      margin-top: 5px;
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    .nav {
+      margin-top: 22px;
+    }
+
+    .nav-btn {
+      width: 100%;
+      border: none;
+      background: transparent;
+      padding: 12px 13px;
+      border-radius: 9px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      color: #6b7280;
+      font-size: 14px;
+      text-align: left;
+    }
+
+    .nav-btn:hover {
+      background: #f5f6f8;
+      color: #111827;
+    }
+
+    .nav-btn.active {
+      background: #111827;
+      color: #ffffff;
+    }
+
+    .nav-icon {
+      width: 20px;
+      text-align: center;
+    }
+
+    /* MAIN */
+
+    .main {
+      width: calc(100% - 240px);
+      margin-left: 240px;
+      min-height: 100vh;
+    }
+
+    .header {
+      height: 70px;
+      background: #ffffff;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 30px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .menu-btn {
+      display: none;
+      border: none;
+      background: transparent;
+      font-size: 22px;
+    }
+
+    .header h1 {
+      font-size: 18px;
+      font-weight: 650;
+    }
+
+    .admin {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      background: #111827;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+    }
+
+    .content {
+      padding: 28px;
+      max-width: 1300px;
+      margin: auto;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    .page-title {
+      margin-bottom: 22px;
+    }
+
+    .page-title h2 {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .page-title p {
+      color: #6b7280;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    /* STATS */
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 25px;
+    }
+
+    .stat-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 13px;
+      padding: 20px;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    .stat-value {
+      margin-top: 10px;
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    /* FORM */
+
+    .form-card {
+      max-width: 850px;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 25px;
+    }
+
+    .form-card h3 {
+      font-size: 17px;
+      margin-bottom: 5px;
+    }
+
+    .form-card > p {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-bottom: 25px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 11px 12px;
+      background: white;
+      outline: none;
+      font-size: 13px;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: #111827;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 90px;
+    }
+
+    .logo-preview {
+      width: 75px;
+      height: 75px;
+      border-radius: 12px;
+      border: 1px dashed #d1d5db;
+      margin-top: 8px;
+      object-fit: contain;
+      display: none;
+      padding: 5px;
+      background: white;
+    }
+
+    .actions {
+      margin-top: 25px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 8px;
+      padding: 11px 17px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .btn-primary {
+      background: #111827;
+      color: white;
+    }
+
+    .btn-primary:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    .btn-light {
+      background: #f3f4f6;
+      color: #374151;
+    }
+
+    /* TABLE */
+
+    .table-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .table-top {
+      padding: 17px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .table-top h3 {
+      font-size: 15px;
+    }
+
+    .search {
+      width: 230px;
+      padding: 9px 11px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 750px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 14px 20px;
+      border-bottom: 1px solid #f0f1f3;
+      font-size: 12px;
+    }
+
+    th {
+      color: #6b7280;
+      font-weight: 600;
+      background: #fafafa;
+    }
+
+    .institution-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .institution-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      background: #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      object-fit: cover;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .badge-school {
+      background: #eef2ff;
+      color: #4338ca;
+    }
+
+    .badge-college {
+      background: #f0fdf4;
+      color: #15803d;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: #15803d;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      background: #22c55e;
+      border-radius: 50%;
+    }
+
+    .empty {
+      padding: 50px 20px;
+      text-align: center;
+      color: #9ca3af;
+      font-size: 13px;
+    }
+
+    /* TOAST */
+
+    .toast {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      background: #111827;
+      color: white;
+      padding: 13px 17px;
+      border-radius: 9px;
+      font-size: 12px;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: .3s;
+      z-index: 100;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast.error {
+      background: #b91c1c;
+    }
+
+    @media (max-width: 850px) {
+      .sidebar {
+        transform: translateX(-100%);
+        transition: .25s;
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .main {
+        width: 100%;
+        margin-left: 0;
+      }
+
+      .menu-btn {
+        display: block;
+      }
+
+      .content {
+        padding: 20px 15px;
+      }
+
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .field.full {
+        grid-column: auto;
+      }
+
+      .header {
+        padding: 0 16px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .admin span {
+        display: none;
+      }
+
+      .table-top {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .search {
+        width: 100%;
+      }
+
+      .form-card {
+        padding: 18px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <aside class="sidebar" id="sidebar">
+
+    <div class="brand">
+      <h2>Institution Admin</h2>
+      <p>Management Console</p>
+    </div>
+
+    <div class="nav">
+
+      <button class="nav-btn active" onclick="openPage('dashboard', this)">
+        
+        Dashboard
+      </button>
+
+      <button class="nav-btn" onclick="openPage('institutions', this)">
+        
+        Institutions
+      </button>
+
+      <button class="nav-btn" onclick="openPage('add', this)">
+        <span class="nav-icon">＋</span>
+        Add Institution
+      </button>
+
+    </div>
+
+  </aside>
+
+  <main class="main">
+
+    <header class="header">
+
+      <div class="header-left">
+        <button class="menu-btn" onclick="toggleMenu()">☰</button>
+        <h1 id="headerTitle">Dashboard</h1>
+      </div>
+
+      <div class="admin">
+        <span>Administrator</span>
+        <div class="avatar">A</div>
+      </div>
+
+    </header>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+
+      <section id="dashboard" class="page active">
+
+        <div class="page-title">
+          <h2>Dashboard</h2>
+          <p>Overview of registered schools and colleges.</p>
+        </div>
+
+        <div class="stats">
+
+          <div class="stat-card">
+            <div class="stat-label">Total Institutions</div>
+            <div class="stat-value" id="totalCount">0</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-label">Schools</div>
+            <div class="stat-value" id="schoolCount">0</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-label">Colleges</div>
+            <div class="stat-value" id="collegeCount">0</div>
+          </div>
+
+        </div>
+
+        <div class="table-card">
+
+          <div class="table-top">
+            <h3>Recently Added</h3>
+
+            <button class="btn btn-primary"
+              onclick="openPageByName('add')">
+              + Add Institution
+            </button>
+          </div>
+
+          <div id="recentInstitutions"></div>
+
+        </div>
+
+      </section>
+      
+
+      <!-- INSTITUTIONS -->
+
+      <section id="institutions" class="page">
+
+        <div class="page-title">
+          <h2>Institutions</h2>
+          <p>View all registered schools and colleges.</p>
+        </div>
+
+        <div class="table-card">
+
+          <div class="table-top">
+            <h3>All Institutions</h3>
+
+            <input
+              type="text"
+              class="search"
+              id="searchInput"
+              placeholder="Search institution..."
+              oninput="searchInstitutions()"
+            >
+          </div>
+
+          <div id="institutionTable"></div>
+
+        </div>
+
+      </section>
+
+      <!-- ADD -->
+
+      <section id="add" class="page">
+
+        <div class="page-title">
+          <h2>Add Institution</h2>
+          <p>Create a new school or college.</p>
+        </div>
+
+        <div class="form-card">
+
+          <h3>Institution Details</h3>
+          <p>Enter the basic information below.</p>
+
+          <form id="institutionForm">
+
+            <div class="form-grid">
+
+              <div class="field">
+                <label>Institution Name *</label>
+
+                <input
+                  type="text"
+                  id="institutionName"
+                  placeholder="Example Public School"
+                  required
+                >
+              </div>
+
+              <div class="field">
+
+  <label>Institution Type *</label>
+
+  <select id="institutionType" required>
+    <option value="">Select type</option>
+    <option value="School">School</option>
+    <option value="College">College</option>
+  </select>
+
+</div>
+
+<!-- BRANCH NAME -->
+<div class="field">
+
+  <label>Branch Name *</label>
+
+  <input
+    type="text"
+    id="branchName"
+    placeholder="Example: Tanuku Branch"
+    required
+  >
+
+</div>
+
+              <div class="field">
+
+                <label>Mobile Number *</label>
+
+                <input
+                  type="tel"
+                  id="mobileNumber"
+                  placeholder="+91 9876543210"
+                  required
+                >
+
+              </div>
+
+              <div class="field">
+
+                <label>Email Address *</label>
+
+                <input
+                  type="email"
+                  id="email"
+                  placeholder="admin@example.com"
+                  required
+                >
+
+              </div>
+
+              <div class="field">
+
+                <label>Access Password *</label>
+
+                <input
+                  type="password"
+                  id="password"
+                  placeholder="Create initial password"
+                  minlength="6"
+                  autocomplete="new-password"
+                  required
+                >
+
+              </div>
+
+              <div class="field full">
+
+                <label>Address *</label>
+
+                <textarea
+                  id="address"
+                  placeholder="Enter complete institution address"
+                  required
+                ></textarea>
+
+              </div>
+
+              <div class="field full">
+
+                <label>Institution Logo</label>
+
+                <input
+                  type="file"
+                  id="logoFile"
+                  accept="image/*"
+                  onchange="previewLogo(event)"
+                >
+
+                <img
+                  id="logoPreview"
+                  class="logo-preview"
+                  alt="Logo Preview"
+                >
+
+              </div>
+
+            </div>
+
+            <div class="actions">
+
+              <button
+                type="button"
+                class="btn btn-light"
+                onclick="resetForm()">
+                Clear
+              </button>
+
+              <button
+                type="submit"
+                class="btn btn-primary"
+                id="saveBtn">
+                Create Institution
+              </button>
+
+            </div>
+
+          </form>
+
+        </div>
+
+      </section>
+
+      <!-- VIEW / EDIT INSTITUTION -->
+      <section id="viewInstitution" class="page">
+        <div class="page-title">
+          <h2>Institution Details</h2>
+          <p>View and manage institution information.</p>
+        </div>
+
+        <div class="form-card">
+          <div style="display:flex;align-items:center;gap:15px;margin-bottom:25px;">
+            <img id="viewLogo" alt="Institution Logo"
+              style="width:75px;height:75px;border-radius:12px;border:1px solid #e5e7eb;object-fit:contain;padding:5px;display:none;background:#fff;">
+            <div id="viewLogoFallback"
+              style="width:75px;height:75px;border-radius:12px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;">
+              I
+            </div>
+            <div>
+              <h3 id="viewTitle">Institution</h3>
+              <p id="viewInstitutionId" style="margin-top:5px;color:#6b7280;font-size:13px;"></p>
+            </div>
+          </div>
+
+          <form id="editInstitutionForm">
+            <input type="hidden" id="editOriginalId">
+            <input type="hidden" id="editCurrentLogo">
+
+            <div class="form-grid">
+              <div class="field">
+                <label>Institution ID</label>
+                <input type="text" id="editInstitutionId" disabled>
+              </div>
+
+              <div class="field">
+                <label>Institution Type</label>
+                <select id="editInstitutionType" disabled>
+                  <option value="School">School</option>
+                  <option value="College">College</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label>Institution Name *</label>
+                <input type="text" id="editInstitutionName" required>
+              </div>
+
+              <div class="field">
+                <label>Branch Name *</label>
+                <input type="text" id="editBranchName" required>
+              </div>
+
+              <div class="field">
+                <label>Mobile Number *</label>
+                <input type="tel" id="editMobile" required>
+              </div>
+
+              <div class="field">
+                <label>Email Address *</label>
+                <input type="email" id="editEmail" required>
+              </div>
+
+              <div class="field">
+                <label>Username (not used for login)</label>
+                <input type="text" id="editUsername" disabled required autocomplete="off">
+              </div>
+
+              <div class="field">
+                <label>New Access Password</label>
+                <input type="password" id="editPassword" minlength="6"
+                       placeholder="Leave blank to keep current password"
+                       autocomplete="new-password">
+              </div>
+
+              <div class="field full">
+                <label>Address *</label>
+                <textarea id="editAddress" required></textarea>
+              </div>
+
+              <div class="field">
+                <label>Status</label>
+                <select id="editStatus">
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label>Replace Logo</label>
+                <input type="file" id="editLogoFile" accept="image/png,image/jpeg,image/webp">
+              </div>
+            </div>
+
+            <div class="actions">
+              <button type="button" class="btn btn-light" onclick="openPageByName('institutions')">
+                Back
+              </button>
+              <button type="submit" class="btn btn-primary" id="updateBtn">
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  /* ==============================
+     SUPABASE
+     ============================== */
+
+  const SUPABASE_URL = "https://wqduicdjhrlhckkahwjt.supabase.co";
+
+  const SUPABASE_ANON_KEY = "sb_publishable_zhMlESulGJdiiKA0MhKZPQ_I0VgenF8";
+
+  const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
+
+  let institutions = [];
+  // IMPORTANT: Protect admin writes with authenticated admin-only RLS/server authorization.
+  // Never put a service_role/secret key in this HTML.
+
+
+  /* ==============================
+     NAVIGATION
+     ============================== */
+
+  function openPage(page, button) {
+    document.querySelectorAll(".page")
+      .forEach(p => p.classList.remove("active"));
+
+    document.getElementById(page)
+      .classList.add("active");
+
+    document.querySelectorAll(".nav-btn")
+      .forEach(btn => btn.classList.remove("active"));
+
+    if (button) {
+      button.classList.add("active");
+    }
+
+    const titles = {
+      dashboard: "Dashboard",
+      institutions: "Institutions",
+      add: "Add Institution",
+      viewInstitution: "Institution Details"
+    };
+
+    document.getElementById("headerTitle").textContent =
+      titles[page] || "Admin";
+
+    document.getElementById("sidebar")
+      .classList.remove("open");
+
+    if (
+      page === "dashboard" ||
+      page === "institutions"
+    ) {
+      loadInstitutions();
+    }
+  }
+
+
+  function openPageByName(page) {
+    const buttons =
+      document.querySelectorAll(".nav-btn");
+
+    let target = null;
+
+    if (page === "dashboard") target = buttons[0];
+    if (page === "institutions") target = buttons[1];
+    if (page === "add") target = buttons[2];
+
+    openPage(page, target);
+  }
+
+
+  function toggleMenu() {
+    document.getElementById("sidebar")
+      .classList.toggle("open");
+  }
+
+
+  /* ==============================
+     LOGO PREVIEW
+     ============================== */
+
+  function previewLogo(event) {
+    const file = event.target.files[0];
+
+    if (!file) return;
+
+    const preview =
+      document.getElementById("logoPreview");
+
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = "block";
+  }
+
+
+  /* ==============================
+     UPLOAD LOGO
+     ============================== */
+
+  async function uploadInstitutionLogo(
+    file,
+    institutionId
+  ) {
+    if (!file) {
+      return null;
+    }
+
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp"
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error(
+        "Logo must be JPG, PNG or WEBP."
+      );
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error(
+        "Logo size must be below 5 MB."
+      );
+    }
+
+    const extension =
+      file.name.split(".").pop().toLowerCase();
+
+    const fileName =
+      `${institutionId}_${Date.now()}.${extension}`;
+
+    const filePath =
+      `institutions/${institutionId}/${fileName}`;
+
+    const { error } =
+      await supabaseClient.storage
+        .from("institution-logos")
+        .upload(
+          filePath,
+          file,
+          {
+            cacheControl: "3600",
+            upsert: false
+          }
+        );
+
+    if (error) {
+      console.error(
+        "Logo upload error:",
+        error
+      );
+
+      throw new Error(
+        "Logo upload failed: " +
+        error.message
+      );
+    }
+
+    const { data: publicData } =
+      supabaseClient.storage
+        .from("institution-logos")
+        .getPublicUrl(filePath);
+
+    return publicData.publicUrl;
+  }
+
+
+  /* ==============================
+     GENERATE INSTITUTION ID
+     ============================== */
+
+  async function generateInstitutionId(type) {
+    const prefix =
+      String(type).toLowerCase() === "school"
+        ? "SCH"
+        : "CLG";
+
+    const { data, error } =
+      await supabaseClient
+        .from("institutions")
+        .select("institution_id");
+
+    if (error) {
+      throw error;
+    }
+
+    let maxNumber = 0;
+
+    (data || []).forEach(item => {
+      const number =
+        parseInt(
+          item.institution_id
+            ?.replace(prefix, "")
+        );
+
+      if (
+        !isNaN(number) &&
+        number > maxNumber
+      ) {
+        maxNumber = number;
+      }
+    });
+
+    const nextNumber =
+      String(maxNumber + 1)
+        .padStart(4, "0");
+
+    return prefix + nextNumber;
+  }
+
+
+  /* ==============================
+     PASSWORD HASH
+     ============================== */
+
+  async function hashPassword(password) {
+    const data = new TextEncoder().encode(password);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    return Array.from(new Uint8Array(hashBuffer))
+      .map(b => b.toString(16).padStart(2, "0"))
+      .join("");
+  }
+
+
+  /* ==============================
+     CREATE INSTITUTION
+     ============================== */
+
+  document
+    .getElementById("institutionForm")
+    .addEventListener(
+      "submit",
+      async function(event) {
+        event.preventDefault();
+
+        const saveBtn =
+          document.getElementById(
+            "saveBtn"
+          );
+
+        saveBtn.disabled = true;
+        saveBtn.textContent =
+          "Creating...";
+
+        try {
+          const name =
+            document
+              .getElementById(
+                "institutionName"
+              )
+              .value
+              .trim();
+
+          const type =
+            document
+              .getElementById(
+                "institutionType"
+              )
+              .value;
+
+          /* BRANCH */
+          const branchName =
+            document
+              .getElementById(
+                "branchName"
+              )
+              .value
+              .trim();
+
+          const mobile =
+            document
+              .getElementById(
+                "mobileNumber"
+              )
+              .value
+              .trim();
+
+          const email =
+            document
+              .getElementById("email")
+              .value
+              .trim();
+
+          const password =
+            document
+              .getElementById("password")
+              .value;
+
+          const address =
+            document
+              .getElementById("address")
+              .value
+              .trim();
+
+          const logoFile =
+            document
+              .getElementById(
+                "logoFile"
+              )
+              .files[0];
+
+
+          /* VALIDATION */
+
+          if (
+            !name ||
+            !type ||
+            !branchName ||
+            !mobile ||
+            !email ||
+                        !password ||
+            !address
+          ) {
+            throw new Error(
+              "Please fill all required fields."
+            );
+          }
+
+          
+
+          if (password.length < 6) {
+            throw new Error("Password must be at least 6 characters.");
+          }
+
+
+          /* GENERATE ID */
+
+          const institutionId =
+            await generateInstitutionId(
+              type
+            );
+
+
+          /* HASH INITIAL PASSWORD */
+
+          saveBtn.textContent =
+            "Preparing credentials...";
+
+          const passwordHash =
+            await hashPassword(password);
+
+          /* SAVE DATABASE FIRST
+             Logo is uploaded after the institution exists so a
+             failed logo upload never prevents institution creation. */
+
+          saveBtn.textContent =
+            "Saving institution...";
+
+          const { error } =
+            await supabaseClient
+              .from("institutions")
+              .insert([
+                {
+                  institution_id: institutionId,
+                  institution_name: name,
+                  institution_type: type,
+                  branches: branchName,
+                  logo_url: null,
+                  address: address,
+                  mobile: mobile,
+                  email: email,
+                                    access_password: password,
+                  status: "active"
+                }
+              ]);
+
+          if (error) {
+            throw error;
+          }
+
+          /* UPLOAD LOGO */
+
+          let logoUrl = null;
+
+          if (logoFile) {
+            saveBtn.textContent = "Uploading logo...";
+
+            try {
+              logoUrl = await uploadInstitutionLogo(
+                logoFile,
+                institutionId
+              );
+
+              const { error: logoDbError } =
+                await supabaseClient
+                  .from("institutions")
+                  .update({ logo_url: logoUrl })
+                  .eq("institution_id", institutionId);
+
+              if (logoDbError) {
+                throw logoDbError;
+              }
+            } catch (logoError) {
+              console.error("Logo upload failed:", logoError);
+              showToast(
+                "Institution created, but logo upload failed: " + logoError.message,
+                true
+              );
+            }
+          }
+
+
+          showToast(
+            `${institutionId} created successfully`
+          );
+
+          resetForm();
+
+          await loadInstitutions();
+
+          setTimeout(() => {
+            openPageByName(
+              "institutions"
+            );
+          }, 500);
+
+        } catch (error) {
+          console.error(error);
+
+          showToast(
+            error.message ||
+            "Unable to create institution",
+            true
+          );
+
+        } finally {
+          saveBtn.disabled = false;
+          saveBtn.textContent =
+            "Create Institution";
+        }
+      }
+    );
+
+
+  /* ==============================
+     VIEW INSTITUTION
+     ============================== */
+
+  async function viewInstitution(institutionId) {
+    try {
+      const { data, error } =
+        await supabaseClient
+          .from("institutions")
+          .select("*")
+          .eq("institution_id", institutionId)
+          .single();
+
+      if (error) throw error;
+
+      document.getElementById("editOriginalId").value = data.institution_id;
+      document.getElementById("editInstitutionId").value = data.institution_id;
+      document.getElementById("editInstitutionType").value = data.institution_type;
+      document.getElementById("editInstitutionName").value = data.institution_name || "";
+      document.getElementById("editBranchName").value = data.branches || "";
+      document.getElementById("editMobile").value = data.mobile || "";
+      document.getElementById("editEmail").value = data.email || "";
+      document.getElementById("editPassword").value = "";
+      document.getElementById("editAddress").value = data.address || "";
+      document.getElementById("editStatus").value = data.status || "active";
+      document.getElementById("editCurrentLogo").value = data.logo_url || "";
+      document.getElementById("editLogoFile").value = "";
+
+      document.getElementById("viewTitle").textContent =
+        data.institution_name || "Institution";
+
+      document.getElementById("viewInstitutionId").textContent =
+        data.institution_id + " • " + (data.branches || "No Branch");
+
+      const logo = document.getElementById("viewLogo");
+      const fallback = document.getElementById("viewLogoFallback");
+
+      if (data.logo_url) {
+        logo.src = data.logo_url;
+        logo.style.display = "block";
+        fallback.style.display = "none";
+      } else {
+        logo.src = "";
+        logo.style.display = "none";
+        fallback.style.display = "flex";
+        fallback.textContent =
+          data.institution_name?.charAt(0).toUpperCase() || "I";
+      }
+
+      openPage("viewInstitution", null);
+
+    } catch (error) {
+      console.error(error);
+      showToast(
+        error.message || "Unable to load institution",
+        true
+      );
+    }
+  }
+
+
+  /* ==============================
+     UPDATE INSTITUTION
+     ============================== */
+
+  document
+    .getElementById("editInstitutionForm")
+    .addEventListener("submit", async function(event) {
+      event.preventDefault();
+
+      const updateBtn = document.getElementById("updateBtn");
+      updateBtn.disabled = true;
+      updateBtn.textContent = "Saving...";
+
+      try {
+        const institutionId =
+          document.getElementById("editOriginalId").value;
+
+        const name =
+          document.getElementById("editInstitutionName").value.trim();
+
+        const branch =
+          document.getElementById("editBranchName").value.trim();
+
+        const mobile =
+          document.getElementById("editMobile").value.trim();
+
+        const editLogoInput =
+          document.getElementById("editLogo") ||
+          document.getElementById("editLogoFile") ||
+          document.getElementById("logoEdit");
+
+        const editLogoFile =
+          editLogoInput && editLogoInput.files
+            ? editLogoInput.files[0]
+            : null;
+
+        const email =
+          document.getElementById("editEmail").value.trim();
+
+        const newPassword =
+          document.getElementById("editPassword").value;
+
+        const address =
+          document.getElementById("editAddress").value.trim();
+
+        const status =
+          document.getElementById("editStatus").value;
+
+        const logoFile =
+          document.getElementById("editLogoFile").files[0];
+
+        if (!name || !branch || !mobile || !email || !address) {
+          throw new Error("Please fill all required fields.");
+        }
+
+        
+
+        if (newPassword && newPassword.length < 6) {
+          throw new Error("New password must be at least 6 characters.");
+        }
+
+        let logoUrl =
+          document.getElementById("editCurrentLogo").value || null;
+
+        if (logoFile) {
+          updateBtn.textContent = "Uploading logo...";
+          logoUrl = await uploadInstitutionLogo(
+            logoFile,
+            institutionId
+          );
+        }
+
+        updateBtn.textContent = "Saving...";
+
+        const updateData = {
+          institution_name: name,
+          branches: branch,
+          mobile: mobile,
+          email: email,
+                    address: address,
+          status: status,
+          logo_url: logoUrl
+        };
+
+        if (newPassword) {
+          updateBtn.textContent = "Preparing password...";
+          updateData.access_password = newPassword;
+        }
+
+        updateBtn.textContent = "Saving...";
+
+        const { error } =
+          await supabaseClient
+            .from("institutions")
+            .update(updateData)
+            .eq("institution_id", institutionId);
+
+        if (error) throw error;
+
+        showToast("Institution updated successfully");
+
+        await loadInstitutions();
+        await viewInstitution(institutionId);
+
+      } catch (error) {
+        console.error(error);
+        showToast(
+          error.message || "Unable to update institution",
+          true
+        );
+      } finally {
+        updateBtn.disabled = false;
+        updateBtn.textContent = "Save Changes";
+      }
+    });
+
+
+  /* ==============================
+     LOAD INSTITUTIONS
+     ============================== */
+
+  async function loadInstitutions() {
+    const { data, error } =
+      await supabaseClient
+        .from("institutions")
+        .select("*")
+        .order(
+          "created_at",
+          { ascending: false }
+        );
+
+    if (error) {
+      console.error(error);
+
+      showToast(
+        "Unable to load institutions: " + error.message,
+        true
+      );
+
+      return;
+    }
+
+    institutions = data || [];
+
+    updateStats();
+    renderInstitutions(institutions);
+    renderRecent();
+  }
+
+
+  /* ==============================
+     DASHBOARD COUNTS
+     ============================== */
+
+  function updateStats() {
+    const schools =
+      institutions.filter(
+        item =>
+          String(item.institution_type || "").trim().toLowerCase() ===
+          "school"
+      ).length;
+
+    const colleges =
+      institutions.filter(
+        item =>
+          String(item.institution_type || "").trim().toLowerCase() ===
+          "college"
+      ).length;
+
+    document.getElementById(
+      "totalCount"
+    ).textContent =
+      institutions.length;
+
+    document.getElementById(
+      "schoolCount"
+    ).textContent =
+      schools;
+
+    document.getElementById(
+      "collegeCount"
+    ).textContent =
+      colleges;
+  }
+
+
+  /* ==============================
+     TABLE
+     ============================== */
+
+  function createTable(data) {
+    if (!data.length) {
+      return `
+        <div class="empty">
+          No institutions found.
+        </div>
+      `;
+    }
+
+    return `
+      <div class="table-wrap">
+
+        <table>
+
+          <thead>
+            <tr>
+              <th>Institution</th>
+              <th>ID</th>
+              <th>Type</th>
+
+              <!-- NEW -->
+              <th>Branch</th>
+
+              <th>Mobile</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+            ${data.map(item => {
+
+              const firstLetter =
+                item.institution_name
+                  ?.charAt(0)
+                  .toUpperCase() || "I";
+
+              const logo =
+                item.logo_url
+                  ? `
+                    <img
+                      src="${escapeHTML(
+                        item.logo_url
+                      )}"
+                      class="institution-logo"
+                      alt="Logo"
+                    >
+                  `
+                  : `
+                    <div
+                      class="institution-logo">
+                      ${escapeHTML(
+                        firstLetter
+                      )}
+                    </div>
+                  `;
+
+              const badge =
+                item.institution_type ===
+                "school"
+                  ? "badge-school"
+                  : "badge-college";
+
+              return `
+                <tr>
+
+                  <td>
+                    <div
+                      class="institution-cell">
+
+                      ${logo}
+
+                      <div>
+
+                        <strong>
+                          ${escapeHTML(
+                            item.institution_name
+                          )}
+                        </strong>
+
+                        <div
+                          style="
+                            color:#9ca3af;
+                            margin-top:3px;
+                          ">
+                          ${escapeHTML(
+                            item.email || ""
+                          )}
+                        </div>
+
+                      </div>
+
+                    </div>
+                  </td>
+
+                  <td>
+                    ${escapeHTML(
+                      item.institution_id
+                    )}
+                  </td>
+
+                  <td>
+                    <span
+                      class="badge ${badge}">
+                      ${capitalize(
+                        item.institution_type
+                      )}
+                    </span>
+                  </td>
+
+                  <!-- BRANCH -->
+                  <td>
+                    ${escapeHTML(
+                      item.branches || "-"
+                    )}
+                  </td>
+
+                  <td>
+                    ${escapeHTML(
+                      item.mobile || "-"
+                    )}
+                  </td>
+
+                  <td>
+                    <span class="status">
+                      <span
+                        class="status-dot">
+                      </span>
+
+                      ${capitalize(
+                        item.status ||
+                        "active"
+                      )}
+                    </span>
+                  </td>
+
+                  <td>
+                    <button
+                      class="btn btn-light"
+                      style="padding:7px 12px;"
+                      onclick="viewInstitution('${escapeJSString(item.institution_id)}')">
+                      View
+                    </button>
+                  </td>
+
+                </tr>
+              `;
+
+            }).join("")}
+
+          </tbody>
+
+        </table>
+
+      </div>
+    `;
+  }
+
+
+  function renderInstitutions(data) {
+    document.getElementById(
+      "institutionTable"
+    ).innerHTML =
+      createTable(data);
+  }
+
+
+  function renderRecent() {
+    const recent =
+      institutions;
+
+    document.getElementById(
+      "recentInstitutions"
+    ).innerHTML =
+      createTable(recent);
+  }
+
+
+  /* ==============================
+     SEARCH
+     ============================== */
+
+  function searchInstitutions() {
+    const value =
+      document
+        .getElementById(
+          "searchInput"
+        )
+        .value
+        .toLowerCase()
+        .trim();
+
+    const filtered =
+      institutions.filter(item => {
+
+        return (
+          item.institution_name
+            ?.toLowerCase()
+            .includes(value)
+
+          ||
+
+          item.institution_id
+            ?.toLowerCase()
+            .includes(value)
+
+          ||
+
+          item.institution_type
+            ?.toLowerCase()
+            .includes(value)
+
+          ||
+
+          item.branches
+            ?.toLowerCase()
+            .includes(value)
+        );
+
+      });
+
+    renderInstitutions(filtered);
+  }
+
+
+  /* ==============================
+     RESET
+     ============================== */
+
+  function resetForm() {
+    document
+      .getElementById(
+        "institutionForm"
+      )
+      .reset();
+
+    document.getElementById("password").value = "";
+
+    const preview =
+      document.getElementById(
+        "logoPreview"
+      );
+
+    preview.src = "";
+    preview.style.display = "none";
+  }
+
+
+  /* ==============================
+     HELPERS
+     ============================== */
+
+  function capitalize(value) {
+    if (!value) return "";
+
+    return (
+      value.charAt(0).toUpperCase()
+      +
+      value.slice(1)
+    );
+  }
+
+
+  function escapeHTML(value) {
+    const div =
+      document.createElement("div");
+
+    div.textContent =
+      value ?? "";
+
+    return div.innerHTML;
+  }
+
+
+  function escapeJSString(value) {
+    return String(value ?? "")
+      .replace(/\\/g, "\\\\")
+      .replace(/'/g, "\\'");
+  }
+
+
+  function showToast(
+    message,
+    error = false
+  ) {
+    const toast =
+      document.getElementById("toast");
+
+    toast.textContent = message;
+
+    toast.className =
+      error
+        ? "toast error show"
+        : "toast show";
+
+    setTimeout(() => {
+      toast.className = "toast";
+    }, 3000);
+  }
+
+
+  /* ==============================
+     INITIAL LOAD
+     ============================== */
+
+  loadInstitutions();
+
+</script>
+
+</body>
+</html>
